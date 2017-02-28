@@ -33,13 +33,31 @@ The adcli command may be used to join a server to active directory.  As part of
 
 ###### /etc/krb5.conf
 
-<ac:structured-macro ac:macro-id="c2fa551b-9b99-4882-9e85-2db7fcd9d08e" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+[libdefaults]
+ default_realm = NORDSTROM.NET
+ dns_lookup_realm = true
+ dns_lookup_kdc = true
+ ticket_lifetime = 24h
+ renew_lifetime = 7d
+ forwardable = true
+ rdns = false
+[domain_realm]
+ nordstrom.net = NORDSTROM.NET
+ .nordstrom.net = NORDSTROM.NET
+````
 
 ###### Join command
 
 This command reads a password from the password file.  You could also distribute a key tab file with established host credentials.  
 
-<ac:structured-macro ac:macro-id="b9cc0b25-a3e6-4dad-9e8e-4d5a346e9b46" ac:name="code" ac:schema-version="1"><ac:plain-text-body>--stdin-password -O<container' -d="" nordstrom.net="" ]]=""></container'></ac:plain-text-body></ac:structured-macro>
+````
+# tr d "\012" <passwordfile adcli join -U <user> --stdin-password -O <container' -D nordstrom.net
+````
 
 ##### kinit
 
@@ -59,19 +77,31 @@ Using ldapsearch will cause a ticket for an ldap service principle to be created
 
 Use the credentials in the key tab to refresh the krbtgt ticket.
 
-<ac:structured-macro ac:macro-id="e276f54b-02d5-4d69-b52c-582479e3a57b" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+kinit -k -t /etc/krb5.keytab
+````
 
 ###### klist
 
 Can be used to list the currently active tickets.
 
-<ac:structured-macro ac:macro-id="27494780-5836-4619-a076-9c1c5ade0396" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+Ticket cache: FILE:/tmp/krb5cc_0
+Default principal: host/y0319t11043.nordstrom.net@NORDSTROM.NET
+Valid starting       Expires              Service principal
+02/18/2017 11:23:27  02/18/2017 21:23:27  krbtgt/NORDSTROM.NET@NORDSTROM.NET
+	renew until 02/25/2017 11:23:27
+02/18/2017 11:24:21  02/18/2017 21:23:27  ldap/dc7.nordstrom.net@NORDSTROM.NET
+	renew until 02/25/2017 11:23:27
+````
 
 ##### Domain Controller
 
         Nslookup or equivalent may be used to find domain controllers.  In my case nordstrom.net is a round robin c-name.  It doesn't play well with ldapsearch.  I pull a specific server from the list and use that. 
 
-<ac:structured-macro ac:macro-id="a59ebdae-87b6-4de1-a4e5-8af645f7bbf7" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+nslookup nordstrom.net
+````
 
 ##### Server OU
 
@@ -79,7 +109,9 @@ Can be used to list the currently active tickets.
 
 From that name put together a table parent OUs.
 
-<ac:structured-macro ac:macro-id="49ce5ae6-d42a-483f-b207-4dfc40fc181c" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+ldapsearch -h 'dc7.nordstrom.net' -s sub -b 'ou=unix,dc=nordstrom,dc=net' -Y GSSAPI "(samaccountname=Y0319P01$)"
+````
 
 distinguishedName: CN=y0319p01,OU=Prod,OU=UNIXALL,OU=Computers,OU=UNIX,DC=nord  
 
@@ -87,17 +119,18 @@ distinguishedName: CN=y0319p01,OU=Prod,OU=UNIXALL,OU=Computers,OU=UNIX,DC=nord
 
         Find the parent OUs, search each of them for attached GPOs.
 
+````
 ou=prod,ou=unixall,ou=computers,ou=unix
-
 ou=unixall,ou=computers,ou=unix
-
 ou=computers,ou=unix
-
 ou=unix
+````
 
 Search each OU for gPlink, get cn in policies,system,nordstrom,net
 
-<ac:structured-macro ac:macro-id="10c7c73b-a8f9-43e2-b268-bbdad742786f" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+# ldapsearch -h 'dc7.nordstrom.net' -s base -b 'ou=prod,ou=unixall,ou=computers,ou=unix,dc=nordstrom,dc=net' -Y GSSAPI "(objectclass=organizationalunit)"
+````
 
 gPLink: [LDAP://cn={84C43D09-B377-421E-82C2-FFFFFFFFF},cn=policies,cn=system,DC=nordstrom,DC=net;0]
 
@@ -105,7 +138,9 @@ gPLink: [LDAP://cn={84C43D09-B377-421E-82C2-FFFFFFFFF},cn=policies,cn=system,DC=
 
 We can use smbclient to list the file structure or retrieve files from the policy.  Here's an example of retrieving a file.  You can treat smbclient much like an ftp client.
 
-<ac:structured-macro ac:macro-id="d0c57d8a-b6e9-4938-975b-e3951ec390e8" ac:name="code" ac:schema-version="1"><ac:plain-text-body></ac:plain-text-body></ac:structured-macro>
+````
+smbclient '\\dc7\SYSVOL' --directory 'nordstrom.net\Policies\{84C43D09-B377-421E-82C2-FFFFFFFFF}' -c 'get file.xml' -k
+````
 
 ### Acknowlegements
 
