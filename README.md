@@ -56,7 +56,7 @@ The adcli command may be used to join a server to active directory.  As part of
 This command reads a password from the password file.  You could also distribute a key tab file with established host credentials.  
 
 ````
-# tr d "\012" <passwordfile adcli join -U <user> --stdin-password -O <container' -D nordstrom.net
+# tr d "\012" <passwordfile | adcli join -U <user> --stdin-password -O <container' -D nordstrom.net
 ````
 
 ##### kinit
