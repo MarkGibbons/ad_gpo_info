@@ -2,7 +2,7 @@
 
 ### Introduction
 
-We needed to be able to read GPOs attached to the OUs holding our computer objects.  I couldn't find clear documentation about the process so compiled these notes.  We are using RHEL 7 and  AD 2008\.  These methods solved my problems, use at your own risk without any warranty or promise that these methods are at all safe to use.
+We needed to be able to read GPOs attached to the OUs holding our computer objects.  I couldn't find clear documentation about the process so compiled these notes.  My hope is that this doc will save someone a few of the weeks I spent getting this to work. We are using RHEL 7 and  AD 2008\.  These methods solved my problems, use at your own risk without any warranty or promise that these methods are at all safe to use.
 
 ### <span style="color: rgb(0,0,0);font-size: 16.0px;font-weight: bold;">GPO structure</span>
 
